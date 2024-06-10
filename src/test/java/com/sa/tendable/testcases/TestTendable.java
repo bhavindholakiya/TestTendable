@@ -1,16 +1,19 @@
-package com.sa.tendable;
+package com.sa.tendable.testcases;
 
 import org.testng.Assert;
-import org.testng.ITestResult;
-
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.openqa.selenium.By;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.StaleElementReferenceException;
@@ -30,40 +33,11 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
-import com.google.common.io.Files;
+import com.sa.tendable.base.BaseTest;
 
-public class TestTendable {
-	WebDriver driver;
-	WebDriverWait wait;
+public class TestTendable extends BaseTest{
 	
-	@BeforeTest
-	@Parameters("browser")
-	public void setup(String browser) {
-		if (browser.equalsIgnoreCase("chrome")){
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--remote-allow-origins=*");
-            options.addArguments("--start-maximized");
-            options.addArguments("disable-infobars");
-            driver = new ChromeDriver(options);
-            System.out.println("Chrome Browser launched!");
-        } else if (browser.equalsIgnoreCase("firefox")) {
-            driver = new FirefoxDriver();
-            System.out.println("Firefox Browser launched!");
-        } else if (browser.equalsIgnoreCase("edge")) {
-            EdgeOptions options = new EdgeOptions();
-            options.addArguments("--remote-allow-origins=*");
-            options.addArguments("--start-maximized");
-            options.addArguments("disable-infobars");
-            driver = new EdgeDriver(options);
-            System.out.println("Edge Browser launched!");
-        }
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-        driver.manage().window().maximize();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));        
-        driver.get("https://www.tendable.com/");
-	}
-	
-	
+	@Test(enabled = false)
 	public void testTopLevelMenus() {
 		
 		WebElement linkHomePage = waitForElement(By.xpath("//a[@class='logo']"));
@@ -108,11 +82,12 @@ public class TestTendable {
 	}
 	
 	@Test
-	public void testContactUsForm() {
+	public void testContactUsForm() throws InvalidFormatException, IOException, InterruptedException {
         // Navigate to Contact Us section and fill form
         waitForElement(By.linkText("Contact Us")).click();                
         waitForElement(By.xpath("//div[contains(text(),'Marketing')]/following-sibling::div/button")).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".toggle-163701")));
+        Thread.sleep(1000);
         waitForElement(By.name("fullName")).sendKeys("Test Name");
         waitForElement(By.name("organisationName")).sendKeys("SA Solutions Pvt. Ltd.");
         waitForElement(By.name("cellPhone")).sendKeys("9000080000");
@@ -121,28 +96,30 @@ public class TestTendable {
         Select jobRoleDp = new Select(jobRole);
         jobRoleDp.selectByValue("Management"); 
         // Leave "Message" field empty and submit
-        waitForElement(By.name("consentAgreed")).click();
+        waitForElementToBeClickable(By.name("consentAgreed")).click();
         waitForElement(By.xpath("//button[text()='Submit']")).click();
-
+        WebElement errorMessage = waitForElement(By.xpath("//div[@class=\"ff-form-error\"]/p"));
+        Assert.assertTrue(errorMessage.isDisplayed(), "Error message is displayed as expected");
+        
         // Verify error message
-        try {
-            WebElement errorMessage = waitForElement(By.xpath("//div[@class=\"ff-form-error\"]/p"));
-            Assert.assertTrue(errorMessage.isDisplayed(), "Error message is displayed as expected");
-        } catch (NoSuchElementException e) {
-            //writeBugReport();
-            Assert.fail("Error message was not displayed when 'Message' field is empty");
-        }
-    }
-		
-	@AfterTest
-	public void tearDown(){
-        System.out.println("Driver going to close.");
-        driver.quit();
-    }
+		/*
+		 * try { WebElement errorMessage =
+		 * waitForElement(By.xpath("//div[@class=\"ff-form-error\"]/p"));
+		 * Assert.assertTrue(errorMessage.isDisplayed(),
+		 * "Error message is displayed as expected"); } catch (NoSuchElementException e)
+		 * { writeBugReport();
+		 * Assert.fail("Error message was not displayed when 'Message' field is empty");
+		 * }
+		 */
+    }	
 	
 	private WebElement waitForElement(By locator) {
         return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
     }
+	
+	private WebElement waitForElementToBeClickable(By locator) {
+		return wait.until(ExpectedConditions.elementToBeClickable(locator));
+	}
 	
 	private boolean verifyRequestDemoButton() {
         int attempts = 0;
@@ -162,26 +139,35 @@ public class TestTendable {
         return false;
     }
 	
-	private void writeBugReport(ITestResult result) {
-		String pageTitle = driver.getTitle();
-		Assert.assertEquals(pageTitle, "Contact us | Quality Improvement Solution | Tendable | Tendable", "The title is invalid");
-		
-		String methodName = result.getName();
-		TakesScreenshot screenshot = (TakesScreenshot) driver;
-		File file = screenshot.getScreenshotAs(OutputType.FILE);
-		try {
-			FileUtils.copyFile(file, new File("./Failed_Test/screen.png"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-        String bugReport = "Bug Report: Error message not displayed when 'Message' field is empty on the Contact Us form.";
-        try (FileWriter writer = new FileWriter("BugReport.docx")) {
-            writer.write(bugReport);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+	/*
+	 * private void writeBugReport() throws IOException, InvalidFormatException {
+	 * String title =
+	 * "No error message displayed when 'Message' field is left empty on Contact Us form\\n"
+	 * ;
+	 * 
+	 * TakesScreenshot screenshot = (TakesScreenshot) driver; File file =
+	 * screenshot.getScreenshotAs(OutputType.FILE); try { FileUtils.copyFile(file,
+	 * new File(System.getProperty("user.dir")+"/Failed_Tests/"+title+".png")); }
+	 * catch (Exception e) { // TODO: handle exception e.printStackTrace(); }
+	 * 
+	 * // Create blank word document XWPFDocument document = new XWPFDocument();
+	 * 
+	 * // Add New Paragraph XWPFParagraph p = document.createParagraph(); XWPFRun
+	 * run = p.createRun(); run.setText(title); run.addCarriageReturn();
+	 * 
+	 * //Create image file input stream File image = new File(String.valueOf(file));
+	 * FileInputStream imageData = new FileInputStream(image);
+	 * 
+	 * //Set image type and get image name int imageType =
+	 * XWPFDocument.PICTURE_TYPE_JPEG; String imageFileName = image.getName();
+	 * 
+	 * int imageWidth = 500; int imageHeight = 250;
+	 * 
+	 * FileOutputStream output = new FileOutputStream(new
+	 * File(System.getProperty("user.dir")+"/Failed_Tests/"+"Bug_report.docx"));
+	 * run.addPicture(imageData, imageType, imageFileName, Units.toEMU(imageWidth) ,
+	 * Units.toEMU(imageHeight));
+	 * 
+	 * document.write(output); }
+	 */
 }
