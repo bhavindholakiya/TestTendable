@@ -37,10 +37,10 @@ import com.sa.tendable.base.BaseTest;
 
 public class TestTendable extends BaseTest{
 	
-	@Test(enabled = false)
+	@Test(enabled = true)
 	public void testTopLevelMenus() {
 		
-		WebElement linkHomePage = waitForElement(By.xpath("//a[@class='logo']"));
+	    WebElement linkHomePage = waitForElement(By.xpath("//a[@class='logo']"));
 	    WebElement linkOurStory = waitForElement(By.xpath("//a[contains(text(),'Our Story')]"));
 	    WebElement linkOurSolutions = waitForElement(By.xpath("//a[contains(text(), 'Our Solution')]"));
 	    WebElement linkWhyTendable = waitForElement(By.xpath("//a[contains(text(), 'Why Tendable?')]"));
