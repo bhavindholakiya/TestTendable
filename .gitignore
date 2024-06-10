@@ -1,3 +1,20 @@
+### Eclipse ###
+.metadata
+.idea/
+bin/
+tmp/
+target/
+test-output/
+report
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
 # Compiled class file
 *.class
 
